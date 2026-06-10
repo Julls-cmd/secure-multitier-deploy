@@ -1,0 +1,127 @@
+services:
+  nginx-proxy:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - uploads:/usr/share/nginx/uploads:ro
+    networks:
+      - frontend_net
+      - backend_net
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    networks:
+      - frontend_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: app_secret
+    networks:
+      - backend_net
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: app_secret
+      MYSQL_ROOT_PASSWORD: root_secret
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - backend_net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  sftp:
+    image: atmoz/sftp:alpine
+    restart: unless-stopped
+    ports:
+      - "2222:22"
+    command: uploader:upload_secret:101:101:upload
+    volumes:
+      - ./sftp/umask.sh:/etc/sftp.d/umask.sh:ro
+      - uploads:/home/uploader/upload
+    networks:
+      - backend_net
+      - sftp_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+    internal: true
+  sftp_net:
+    driver: bridge
+
+volumes:
+  db_data:
+  uploads:
