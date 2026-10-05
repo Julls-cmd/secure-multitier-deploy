@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-
+/**
+ * Main application component.
+ * Checks the backend health endpoint on mount and displays its status.
+ * @returns {JSX.Element} The infrastructure demo page with the health badge.
+ */
 export default function App() {
   const [status, setStatus] = useState('checking...');
   const [error, setError] = useState(null);

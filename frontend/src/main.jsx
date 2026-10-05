@@ -1,3 +1,7 @@
+/**
+ * @file Entry point of the React application.
+ * Mounts the App component into the #root DOM element.
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
