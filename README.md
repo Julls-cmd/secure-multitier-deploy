@@ -16,7 +16,6 @@ sftp/       SFTP gateway configuration
 
 See `DOCUMENTACION.md` for the deployment and administration manual.
 
-
 ## Prerequisites
 - Docker Desktop (Docker Compose v2)
 - OpenSSL
@@ -25,23 +24,36 @@ See `DOCUMENTACION.md` for the deployment and administration manual.
 ## Installation
 1. Clone the repository:
 
+   ```bash
    git clone https://github.com/Julls-cmd/secure-multitier-deploy.git
    cd secure-multitier-deploy
+   ```
 
 2. Generate the self-signed TLS certificates (use Git Bash or WSL on Windows):
 
+   ```bash
    cd nginx
    chmod +x gen-certs.sh
    ./gen-certs.sh localhost
    cd ..
+   ```
 
 3. Build and start the containers:
 
+   ```bash
    docker compose build
    docker compose up -d
    docker compose ps
+   ```
 
 4. Open https://localhost/ and accept the self-signed certificate warning.
+
+## Stopping the stack
+To stop and remove the containers:
+
+```bash
+docker compose down
+```
 
 ## Available endpoints
 | Resource       | URL                          |
@@ -53,7 +65,9 @@ See `DOCUMENTACION.md` for the deployment and administration manual.
 ## Code documentation
 Generate the backend Javadoc (Windows CMD, from the `backend` folder):
 
+```bat
 docker run --rm -v "%cd%":/app -w /app maven:3.9-eclipse-temurin-21 mvn clean javadoc:javadoc
+```
 
 The HTML site is generated in `backend/target/site/apidocs/index.html`.
 
